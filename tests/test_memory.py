@@ -3,6 +3,12 @@ import json
 import time
 import uuid
 import random
+import sys
+import os
+
+# Add the parent directory to the Python path so we can import modules from there
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from fastapi.testclient import TestClient
 from api_wrapper import app
 from router import MEMORY_STORE
