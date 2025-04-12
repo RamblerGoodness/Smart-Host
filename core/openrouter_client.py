@@ -17,13 +17,21 @@ class OpenRouterClient(BaseClient):
         return response.json()
 
     def embed(self, input, model="openrouter/text-embedding-ada-002", **kwargs):
-        url = self.base_url + 'embeddings'
-        headers = {"Authorization": f"Bearer {self.api_key}"}
-        data = {"model": model, "input": input}
-        data.update(kwargs)
-        response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()
-        return response.json()
+        try:
+            url = self.base_url + 'embeddings'
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+            data = {"model": model, "input": input}
+            data.update(kwargs)
+            response = requests.post(url, headers=headers, json=data)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                # OpenRouter might not support embeddings at this endpoint
+                raise NotImplementedError(
+                    "Embeddings endpoint not available in OpenRouter. Error: " + str(e)
+                )
+            raise
 
     def image(self, prompt, **kwargs):
         # OpenRouter may not support image generation; raise NotImplementedError

@@ -3,6 +3,7 @@
 Thank you for considering contributing!
 
 ## How to Contribute
+
 - Fork the repo and create your branch from `main`.
 - Write clear, concise commit messages.
 - Add tests for new features and bug fixes.
@@ -10,4 +11,5 @@ Thank you for considering contributing!
 - Follow the project structure and code style.
 
 ## Code of Conduct
+
 Be respectful and inclusive. Harassment or discrimination will not be tolerated.

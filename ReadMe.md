@@ -1,13 +1,28 @@
-# Quickstart
+# Smart-Host: Unified LLM API Wrapper
 
-1. Clone the repo and enter the directory:
+Smart-Host is a self-hostable, multi-provider LLM API wrapper that unifies access to OpenAI, OpenRouter, and Ollama through a single REST API. It provides a consistent interface for chat completions, embeddings, and image generation across different providers.
+
+## Features
+
+- **Unified API**: Access OpenAI, OpenRouter, and Ollama through identical endpoints
+- **Multiple Capabilities**: Chat completions, embeddings, and image generation
+- **Memory System**: Store and retrieve conversation history with chat_id
+- **Prompt Profiles**: Use predefined system messages for different use cases
+- **Robust Error Handling**: Detailed logging and standardized error responses
+- **WebSocket Support**: Stream responses in real-time
+- **Tool Integration**: Call custom tools directly from the API
+- **Docker Ready**: Deploy easily with Docker and docker-compose
+
+## Quickstart
+
+1. Clone the repository:
 
    ```bash
    git clone <your-repo-url>
-   cd Wrapper
+   cd Smart-Host
    ```
 
-2. Copy and edit your environment variables:
+2. Copy and edit environment variables:
 
    ```bash
    copy .env.example .env
@@ -32,224 +47,85 @@
    docker-compose up --build
    ```
 
-## 📋 Project Plan: Unified LLM API Wrapper (with MCP Support)
+6. Access the API documentation at http://localhost:8080/docs
 
-This document outlines the step-by-step implementation plan for a self-hostable, multi-provider LLM API wrapper. The project will unify access to OpenAI, OpenRouter, and Ollama, while also adding support for custom features and the Model Context Protocol (MCP).
+## API Endpoints
 
----
+### Chat Completion
 
-## 📌 Project Goals
-
-- Create a unified Python-based interface for multiple LLM providers
-- Wrap key APIs: chat, embeddings, image generation, tools
-- Support local hosting with proper config and environment handling
-- Add extended features beyond official APIs (memory, prompt profiles, etc.)
-- Enable tool/plugin system via MCP and OpenAI-compatible formats
-- Make it GitHub-ready with clean project structure, docs, and security
-
----
-
-## 🗂️ Project Structure
-
-``` text
-llm-wrapper/
-├── core/                    # All LLM provider clients
-│   ├── base_client.py       # Abstract class/interface
-│   ├── openai_client.py
-│   ├── openrouter_client.py
-│   ├── ollama_client.py
-│   └── mcp_client.py
-│
-├── plugins/                 # Optional tools/functions callable by LLMs
-│   └── custom_tool.py
-│
-├── memory/                  # Optional memory integration (e.g., ChromaDB)
-│   └── vector_store.py
-│
-├── router.py                # Provider dispatcher
-├── api_wrapper.py           # Public interface (class or web API)
-├── settings.py              # Configuration loader (.env or constants)
-├── utils.py                 # Helpers: logging, streaming, retries
-│
-├── .env.example             # Example environment config
-├── .gitignore
-├── requirements.txt
-├── setup.py                 # Optional install script
-├── README.md
-└── LICENSE
 ```
-
----
-
-## 🛠️ Setup & Configuration
-
-### 1. Environment Setup
-
-- Use `python-dotenv` to load secrets from `.env`
-- Create `.env.example` and `.gitignore` to protect keys
-- Keys required:
-  - `OPENAI_API_KEY`
-  - `OPENROUTER_API_KEY`
-  - `OLLAMA_HOST` (default to `http://localhost:11434/`)
-
-### 2. `settings.py`
-
-- Load and expose config values for the app
-- Provide fallbacks and sanity checks
-
----
-
-## 🔧 Core Feature Implementation
-
-### ✅ Phase 1: Provider Clients (`core/`)
-
-- [x] `base_client.py` – abstract methods for chat, embed, image
-- [x] `openai_client.py` – full support for Chat, Embeddings, DALL·E, Tools
-- [x] `openrouter_client.py` – mirror OpenAI format using requests
-- [x] `ollama_client.py` – POST to `http://localhost:11434/api/chat`
-- [ ] `mcp_client.py` – integration with Model Context Protocol
-
-### ✅ Phase 2: Routing & Wrapper
-
-- [x] `router.py` – simple router to call the correct provider
-- [x] `api_wrapper.py` – single entry class for the user to interact with
-- [ ] Add optional fallback or cascading call logic
-
-### ✅ Phase 3: CLI or Web API
-
-- [x] FastAPI server exposing routes for `/chat`, `/embed`, `/image`
-- [ ] WebSocket or SSE support for streaming
-- [ ] Middleware for API key verification or basic auth
-
----
-
-## 🌟 Custom Feature Extensions
-
-### 🚀 Prompt Profiles
-
-- [ ] `profiles.json` or `profiles/` folder
-- [ ] Load predefined system messages per profile name
-- [ ] Add to `.chat()` with `profile="roleplay_knight"`
-
-### 🧠 Memory System
-
-- [ ] Add `memory/vector_store.py` using Chroma or SQLite
-- [ ] Store summaries, previous context, or embedding-indexed history
-- [ ] Allow retrieval and injection into prompt as context
-- [ ] Context aware and only adds to memory as context from current chat fills up
-- [ ] Tag to define weather memory is for current chat only or chat agnostic
-- [ ] Deletion of chat deletes any memory from that chat as long as it's tagged chat only
-
-### 🧰 Plugin Tools (Function Calling)
-
-- [ ] `plugins/` folder with Python functions
-- [ ] Scan, register, and expose as tool list
-- [ ] Tool return format compatible with OpenAI tool-calling
-- [ ] Add built-in tools (math, calendar, wiki lookup, etc.)
-
-### 📊 Model Benchmark Mode
-
-- [ ] Run same prompt across all providers
-- [ ] Compare latency, token usage, and output
-- [ ] Export side-by-side report as JSON or markdown
-
-### 🔌 MCP Integration
-
-- [ ] Add `mcp_client.py` using MCP Python SDK
-- [ ] Support querying MCP tools/documents
-- [ ] Optionally expose the wrapper as an MCP server/node
-
----
-
-## ✅ Developer Experience
-
-### Security & GitHub Readiness
-
-- [x] `.gitignore` excludes `.env`
-- [x] `.env.example` for safe config sharing
-- [ ] Add `CONTRIBUTING.md` and `LICENSE`
-- [ ] Optional: Pre-commit hooks or linters (e.g., black, isort, flake8)
-
-### Packaging
-
-- [ ] `requirements.txt` for dependencies
-- [ ] `setup.py` for pip install support
-- [ ] Dockerfile and `docker-compose.yml` for container deployment
-
----
-
-## 🚀 Deployment Options
-
-### Local API
-
-```bash
-uvicorn api_wrapper:app --host 0.0.0.0 --port 8080
-```
-
-You can now run the FastAPI server locally and access the endpoints:
-
-- POST `/chat` with JSON: `{ "provider": "openai", "messages": [...] }`
-- POST `/embed` with JSON: `{ "provider": "openai", "input": "text" }`
-- POST `/image` with JSON: `{ "provider": "openai", "prompt": "description" }`
-
-### Reverse Proxy (Optional)
-
-- Use Nginx or Caddy to add HTTPS, CORS headers, and rate-limiting
-
-### Docker (Optional)
-
-```bash
-docker build -t llm-wrapper .
-docker run -p 8080:8080 --env-file .env llm-wrapper
-```
-
----
-
-## 🧠 Memory & Prompt Profiles
-
-### Memory (chat_id)
-
-- Pass a unique `chat_id` to `/chat` to enable persistent memory for that conversation.
-- The API will recall previous messages for the same `chat_id` and inject them as context.
-
-Example:
-
-```json
 POST /chat
+```
+
+Request body:
+```json
 {
   "provider": "openai",
-  "messages": [{"role": "user", "content": "Hello!"}],
-  "chat_id": "session-123"
+  "messages": [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Hello, how are you?"}
+  ],
+  "model": "gpt-3.5-turbo",
+  "profile": "default",
+  "chat_id": "user-123"
 }
 ```
 
-### Prompt Profiles
+### Embeddings
 
-- Pass a `profile` to `/chat` to use a predefined system message (see `profiles/profiles.json`).
-- Example profiles: `default`, `roleplay_knight`, `concise`.
+```
+POST /embed
+```
 
-Example:
-
+Request body:
 ```json
-POST /chat
 {
   "provider": "openai",
-  "messages": [{"role": "user", "content": "How are you?"}],
-  "profile": "roleplay_knight"
+  "input": "Text to embed",
+  "model": "text-embedding-ada-002"
 }
 ```
 
----
+### Image Generation
 
-## 🔌 WebSocket Streaming
+```
+POST /image
+```
 
-The API supports real-time streaming of chat responses via WebSocket.
+Request body:
+```json
+{
+  "provider": "openai",
+  "prompt": "A beautiful sunset over the ocean"
+}
+```
 
-### Endpoint
+### Available Tools
 
-- `ws://localhost:8080/ws_chat`
+```
+GET /tools
+```
 
-### Usage Example (Python)
+### Call a Tool
+
+```
+POST /call_tool
+```
+
+Request body:
+```json
+{
+  "name": "tool_name",
+  "args": ["arg1", "arg2"],
+  "kwargs": {"param1": "value1"}
+}
+```
+
+## WebSocket Streaming
+
+Connect to `/ws_chat` with a WebSocket client and send a JSON payload similar to the `/chat` endpoint.
+
+Example Python client:
 
 ```python
 import asyncio
@@ -261,50 +137,213 @@ async def main():
     async with websockets.connect(uri) as websocket:
         await websocket.send(json.dumps({
             "provider": "openai",
-            "messages": [{"role": "user", "content": "Stream this!"}],
-            "chat_id": "stream-demo"
+            "messages": [{"role": "user", "content": "Tell me a story"}]
         }))
+        
+        response = ""
         while True:
             chunk = await websocket.recv()
             if chunk == "[END]":
                 break
+            response += chunk
             print(chunk, end="", flush=True)
+        
+        print("\nFull response:", response)
 
 asyncio.run(main())
 ```
 
-This will print the streamed response as it is generated by the model.
+## Prompt Profiles
 
----
+You can create custom prompt profiles in `profiles/profiles.json`. Each profile contains a system message that gets prepended to your chat messages.
 
-## 🧪 Testing & Examples
+Example profiles.json:
+```json
+{
+  "default": {
+    "system": "You are a helpful assistant."
+  },
+  "programmer": {
+    "system": "You are an expert programmer."
+  },
+  "concise": {
+    "system": "You are a helpful assistant. Keep your answers concise and to the point."
+  }
+}
+```
 
-- [ ] Unit tests for each client implementation
-- [ ] Integration tests for full pipeline (router → provider → response)
-- [ ] Example scripts or notebooks for:
-  - Chat
-  - Embedding generation
-  - Tool calling
-- [ ] Logging utility for saving query sessions
+To use a profile, include the profile name in your chat request:
+```json
+{
+  "provider": "openai",
+  "messages": [{"role": "user", "content": "Help me with Python"}],
+  "profile": "programmer"
+}
+```
 
----
+## Memory System
 
-## 📅 Milestone Timeline (Suggested)
+Smart-Host includes a sophisticated memory system that supports both conversation-specific and user-specific memory:
 
-| Phase                | Est. Time | Priority |
-|---------------------|-----------|----------|
-| Environment & Config| 1 day     | ⭐⭐⭐⭐⭐    |
-| Provider Clients    | 2–3 days  | ⭐⭐⭐⭐⭐    |
-| Routing + Wrapper   | 1 day     | ⭐⭐⭐⭐     |
-| MCP Integration     | 2 days    | ⭐⭐⭐      |
-| Prompt Profiles     | 1 day     | ⭐⭐⭐      |
-| Memory System       | 2 days    | ⭐⭐⭐⭐     |
-| Plugin Tools        | 2 days    | ⭐⭐⭐      |
-| Web API / UI        | 2 days    | ⭐⭐       |
-| Docker + Deploy     | 1–2 days  | ⭐⭐       |
+### Memory Types
 
----
+1. **Conversation-specific Memory**:
+   - Tied to a specific conversation/chat thread
+   - Useful for maintaining context within a single conversation
+   - Identified by `chat_id` in API calls
 
-## 📌 Final Thoughts
+2. **User-specific Memory**:
+   - Persists across multiple conversations with the same user
+   - Perfect for remembering user preferences, facts, or history
+   - Identified by `user_id` in API calls
 
-This project is designed to be extensible, modder-friendly, and secure. Every module should be independently testable and replaceable. With clear abstraction and routing, adding support for new APIs in the future will be trivial. MCP integration and extended memory/tooling support will take this beyond a basic API bridge — into something closer to a lightweight LLM operating system.
+### Using Memory in Chat Requests
+
+To use the memory system, include the appropriate parameters in your chat request:
+
+```json
+{
+  "provider": "openai",
+  "messages": [{"role": "user", "content": "What's my favorite color?"}],
+  "model": "gpt-3.5-turbo",
+  "chat_id": "conversation-123",          // For conversation-specific memory
+  "user_id": "user-456",                  // For user-specific memory
+  "include_user_memory": true,            // Whether to include user memory in context
+  "save_to_user_memory": true             // Whether to save this exchange to user memory
+}
+```
+
+#### Parameters Explained:
+
+- `chat_id`: Identifies a specific conversation. Messages are stored and retrieved using this ID.
+- `user_id`: Identifies a specific user across conversations. User preferences and facts can be stored here.
+- `include_user_memory`: When true, the API will include user-specific memory in the context.
+- `save_to_user_memory`: When true, the current exchange will be saved to user-specific memory for future conversations.
+
+### Memory Management API
+
+Smart-Host provides endpoints to manage memory:
+
+#### Delete Conversation Memory
+
+```
+DELETE /memory/conversation/{conversation_id}
+```
+
+#### Delete User Memory
+
+```
+DELETE /memory/user/{user_id}
+```
+
+#### Get Memory Statistics
+
+```
+GET /memory/status
+```
+
+Returns statistics about current memory usage, including counts and IDs of both user and conversation memories.
+
+### Memory Strategy Recommendations
+
+For best results with the memory system:
+
+1. **For casual chatbots**:
+   - Use only `chat_id` for conversation-specific context
+   - No need to set `user_id` or `save_to_user_memory`
+
+2. **For personal assistants**:
+   - Use both `chat_id` and `user_id`
+   - Set `save_to_user_memory: true` for important user facts
+   - Example: "My name is Alice" or "I prefer dark mode"
+
+3. **For user preferences**:
+   - Use `user_id` with `save_to_user_memory: true`
+   - Keep `include_user_memory: true` to maintain consistent user experience
+
+4. **For privacy-sensitive applications**:
+   - Regularly call the memory deletion endpoints
+   - Consider implementing automatic memory expiration
+
+### Memory Example
+
+First conversation:
+
+```json
+// Request 1
+{
+  "provider": "openai",
+  "messages": [{"role": "user", "content": "My name is Alice and I love blue."}],
+  "chat_id": "conversation-1",
+  "user_id": "user-123",
+  "save_to_user_memory": true
+}
+
+// Request 2 (same conversation)
+{
+  "provider": "openai",
+  "messages": [{"role": "user", "content": "What's my name?"}],
+  "chat_id": "conversation-1",
+  "user_id": "user-123"
+}
+// Response: "Your name is Alice."
+```
+
+Second conversation (different chat_id, same user_id):
+
+```json
+// Request 3
+{
+  "provider": "openai",
+  "messages": [{"role": "user", "content": "What's my favorite color?"}],
+  "chat_id": "conversation-2",
+  "user_id": "user-123",
+  "include_user_memory": true
+}
+// Response: "Your favorite color is blue."
+```
+
+This demonstrates how user-specific memory persists across different conversations, while conversation-specific memory is isolated to each chat.
+
+## Environment Variables
+
+Configure your API using the following environment variables in `.env`:
+
+- `OPENAI_API_KEY`: Your OpenAI API key
+- `OPENROUTER_API_KEY`: Your OpenRouter API key
+- `OLLAMA_HOST`: URL for your Ollama instance (default: http://localhost:11434/)
+- `API_HOST`: Host to bind the API server to (default: 0.0.0.0)
+- `API_PORT`: Port to run the API server on (default: 8080)
+- `DEBUG`: Enable debug mode (default: False)
+- `LOG_LEVEL`: Set logging level (default: INFO)
+
+## Adding Custom Tools
+
+Create new Python files in the `plugins/` directory to define custom tools.
+
+Example custom tool:
+
+```python
+def weather(location: str):
+    """Get the weather for a location"""
+    # Implement weather lookup
+    return {
+        "location": location,
+        "temperature": "72°F",
+        "conditions": "Sunny"
+    }
+```
+
+Tools will be automatically discovered and made available through the `/tools` endpoint.
+
+## Logging
+
+Logs are written to both the console and `smart_host.log` in the project directory. The log level can be adjusted in the `.env` file.
+
+## Contributors
+
+Contributions are welcome! Please see CONTRIBUTING.md for guidelines.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

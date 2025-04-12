@@ -5,6 +5,8 @@ from .base_client import BaseClient
 class OllamaClient(BaseClient):
     def __init__(self, host=None):
         self.host = host or os.getenv('OLLAMA_HOST', 'http://localhost:11434')
+        # Remove trailing slash if present to avoid double slashes in URLs
+        self.host = self.host.rstrip('/')
 
     def chat(self, messages, model="llama2", **kwargs):
         url = f"{self.host}/api/chat"
