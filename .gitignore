@@ -53,3 +53,6 @@ logs/
 
 # Project specific
 smart_host.log
+
+# SQLite database
+memory_store.sqlite3

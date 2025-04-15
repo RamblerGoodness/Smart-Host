@@ -183,7 +183,7 @@ To use a profile, include the profile name in your chat request:
 
 ## Memory System
 
-Smart-Host includes a sophisticated memory system that supports both conversation-specific and user-specific memory:
+Smart-Host now uses a persistent memory system backed by SQLite. This ensures that both conversation-specific and user-specific memory are retained across server restarts and are isolated per user and per chat. The SQLite database file (`memory_store.sqlite3`) is created automatically in the project directory and is ignored by git.
 
 ### Memory Types
 
@@ -191,11 +191,20 @@ Smart-Host includes a sophisticated memory system that supports both conversatio
    - Tied to a specific conversation/chat thread
    - Useful for maintaining context within a single conversation
    - Identified by `chat_id` in API calls
+   - Isolated per user: memory from one user's chat will not appear in another user's chat
 
 2. **User-specific Memory**:
    - Persists across multiple conversations with the same user
    - Perfect for remembering user preferences, facts, or history
    - Identified by `user_id` in API calls
+   - Isolated per user
+
+### Persistence Details
+
+- All memory is stored in a local SQLite database (`memory_store.sqlite3`).
+- The database is created automatically; no setup is required.
+- The file is ignored by git via `.gitignore`.
+- Memory is never shared between users.
 
 ### Using Memory in Chat Requests
 

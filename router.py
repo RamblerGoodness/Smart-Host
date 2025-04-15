@@ -4,14 +4,14 @@ from core.ollama_client import OllamaClient
 import json
 import os
 import time
-from memory.vector_store import InMemoryVectorStore
+from memory.vector_store import SQLiteVectorStore
 from utils import log_error, log_request, log_response
 
 PROFILE_PATH = os.path.join(os.path.dirname(__file__), 'profiles', 'profiles.json')
 with open(PROFILE_PATH, 'r', encoding='utf-8') as f:
     PROFILES = json.load(f)
 
-MEMORY_STORE = InMemoryVectorStore()
+MEMORY_STORE = SQLiteVectorStore()
 
 class Router:
     def __init__(self, provider):
@@ -43,11 +43,11 @@ class Router:
             # Retrieve conversation-specific memory
             memory_entries = []
             if chat_id:
-                memory_entries = MEMORY_STORE.query(chat_id, include_user_memory=False)
+                memory_entries = MEMORY_STORE.query(chat_id, include_user_memory=False, user_id=user_id)
                 
             # Add user-specific memory if requested and available
             if user_id and include_user_memory:
-                user_memory = MEMORY_STORE.query(user_id, include_user_memory=True)
+                user_memory = MEMORY_STORE.query(chat_id, include_user_memory=True, user_id=user_id)
                 # Prepend user memories before conversation memories
                 memory_entries = user_memory + memory_entries
                 
@@ -88,7 +88,8 @@ class Router:
                                     "role": "user",
                                     "timestamp": timestamp
                                 },
-                                memory_type="conversation"
+                                memory_type="conversation",
+                                user_id=user_id
                             )
                         
                         # Optionally save to user memory
@@ -118,7 +119,8 @@ class Router:
                                         "role": "assistant",
                                         "timestamp": timestamp
                                     },
-                                    memory_type="conversation"
+                                    memory_type="conversation",
+                                    user_id=user_id
                                 )
                             
                             # Optionally save to user memory

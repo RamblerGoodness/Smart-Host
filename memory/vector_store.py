@@ -1,4 +1,9 @@
 # Placeholder for vector store integration (e.g., ChromaDB, SQLite)
+import sqlite3
+import threading
+import json
+import time
+
 class VectorStore:
     def __init__(self):
         pass
@@ -98,3 +103,97 @@ class InMemoryVectorStore(VectorStore):
     def delete_all_conversation_memories(self):
         """Delete all conversation-specific memories."""
         self.memory['conversation'] = {}
+
+class SQLiteVectorStore(VectorStore):
+    def __init__(self, db_path='memory_store.sqlite3'):
+        self.db_path = db_path
+        self._lock = threading.Lock()
+        self._init_db()
+
+    def _init_db(self):
+        with self._get_conn() as conn:
+            c = conn.cursor()
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS conversation_memory (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    chat_id TEXT NOT NULL,
+                    user_id TEXT,
+                    vector TEXT NOT NULL,
+                    role TEXT,
+                    timestamp REAL,
+                    metadata TEXT
+                )
+            ''')
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS user_memory (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    vector TEXT NOT NULL,
+                    role TEXT,
+                    timestamp REAL,
+                    metadata TEXT
+                )
+            ''')
+            conn.commit()
+
+    def _get_conn(self):
+        return sqlite3.connect(self.db_path, check_same_thread=False)
+
+    def add(self, id, vector, metadata=None, memory_type='conversation', user_id=None):
+        if metadata is None:
+            metadata = {}
+        role = metadata.get('role')
+        timestamp = metadata.get('timestamp', time.time())
+        meta_json = json.dumps(metadata)
+        with self._lock, self._get_conn() as conn:
+            c = conn.cursor()
+            if memory_type == 'user':
+                c.execute('''INSERT INTO user_memory (user_id, vector, role, timestamp, metadata)
+                             VALUES (?, ?, ?, ?, ?)''',
+                          (id, vector, role, timestamp, meta_json))
+            else:
+                c.execute('''INSERT INTO conversation_memory (chat_id, user_id, vector, role, timestamp, metadata)
+                             VALUES (?, ?, ?, ?, ?, ?)''',
+                          (id, user_id, vector, role, timestamp, meta_json))
+            conn.commit()
+
+    def query(self, id, include_user_memory=True, user_id=None, top_k=5):
+        results = []
+        with self._lock, self._get_conn() as conn:
+            c = conn.cursor()
+            # Conversation-specific memory
+            c.execute('''SELECT vector, metadata FROM conversation_memory WHERE chat_id=? ORDER BY timestamp ASC''', (id,))
+            for row in c.fetchall():
+                results.append({"vector": row[0], "metadata": json.loads(row[1]) if row[1] else {}})
+            # User-specific memory
+            if include_user_memory and user_id:
+                c.execute('''SELECT vector, metadata FROM user_memory WHERE user_id=? ORDER BY timestamp ASC''', (user_id,))
+                for row in c.fetchall():
+                    results.append({"vector": row[0], "metadata": json.loads(row[1]) if row[1] else {}})
+        # Sort by timestamp if available
+        results.sort(key=lambda x: x.get('metadata', {}).get('timestamp', 0))
+        return results[-top_k:] if results else []
+
+    def delete_conversation(self, conversation_id):
+        with self._lock, self._get_conn() as conn:
+            c = conn.cursor()
+            c.execute('DELETE FROM conversation_memory WHERE chat_id=?', (conversation_id,))
+            conn.commit()
+
+    def delete_user_memory(self, user_id):
+        with self._lock, self._get_conn() as conn:
+            c = conn.cursor()
+            c.execute('DELETE FROM user_memory WHERE user_id=?', (user_id,))
+            conn.commit()
+
+    def delete_all_user_memories(self):
+        with self._lock, self._get_conn() as conn:
+            c = conn.cursor()
+            c.execute('DELETE FROM user_memory')
+            conn.commit()
+
+    def delete_all_conversation_memories(self):
+        with self._lock, self._get_conn() as conn:
+            c = conn.cursor()
+            c.execute('DELETE FROM conversation_memory')
+            conn.commit()
